@@ -11,8 +11,20 @@ const char* src_window_name = "Select ROI";
 
 cv::Point point1, point2;
 cv::Rect roiRectangle;
-int drag = 0, select_flag = 0;
+int drag = 0, select_flag = 0, roi_flag = 0;
 bool callback = false;
+
+
+void checkAndGetRoiRectangle(int x1, int y1, int width, int height) {
+	if(width>0 && height>0 && x1+width<=frame.cols && y1+height<=frame.rows){
+		roiRectangle = cv::Rect(point1.x, point1.y, point2.x - point1.x, point2.y - point1.y);
+		roiImg = frame(roiRectangle);
+		roi_flag = 1;
+	}
+	else {
+		roi_flag = 0;
+	}
+}
 
 // Implement mouse callback
 void mouseHandler(int event, int x, int y, int flags, void* param)
@@ -36,10 +48,8 @@ void mouseHandler(int event, int x, int y, int flags, void* param)
 	if (event == CV_EVENT_LBUTTONUP && drag)
 	{
 		point2 = cv::Point(x, y);
-		//roiRectangle = cv::Rect(point1.x, point1.y, x - point1.x, y - point1.y);
-		roiRectangle = cv::Rect(point1.x, point1.y, point2.x - point1.x, point2.y - point1.y);
+		checkAndGetRoiRectangle(point1.x, point1.y, point2.x - point1.x, point2.y - point1.y);
 		drag = 0;
-		roiImg = frame(roiRectangle);
 	}
 	if (event == CV_EVENT_LBUTTONUP)
 	{
@@ -52,7 +62,6 @@ void mouseHandler(int event, int x, int y, int flags, void* param)
 int main() {
 	char charCheckForEscKey = 0;
 	cv::VideoCapture capWebcam(1);		// declare a VideoCapture object and associate to webcam, 0 => use 1st laptop webcam, 1=> use 2nd usb webcam!
-
 	if (capWebcam.isOpened() == false) {				// check if VideoCapture object was associated to webcam successfully
 		std::cout << "error: capWebcam not accessed successfully\n\n";	// if not, print error message to std out
 		return(0);														// and exit program
@@ -74,7 +83,7 @@ int main() {
 		if (frame.empty())
 			break;
 		cv::imshow(src_window_name, frame);
-		if (select_flag == 1)
+		if (select_flag == 1 && roi_flag == 1)
 		{
 			cv::imshow("ROI", roiImg); /* show the image bounded by the ROI rectangle */
 		}
